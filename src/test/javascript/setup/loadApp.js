@@ -19,6 +19,7 @@ const REGISTERED_IDS = [
   'app-header',
   'app-title',
   'app-subtitle',
+  'theme-toggle',
   'range-form',
   'range-from',
   'range-to',
@@ -161,6 +162,7 @@ function createFakeApi(overrides) {
  */
 async function loadApp(overrides) {
   const html = readIndexHtml();
+  document.documentElement.removeAttribute('data-theme');
   const bodyMatch = html.match(/<body>([\s\S]*)<\/body>/);
   document.body.innerHTML = bodyMatch[1].replace(/<script[^>]*><\/script>/g, '');
 

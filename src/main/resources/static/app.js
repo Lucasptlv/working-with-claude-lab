@@ -13,6 +13,8 @@
   var DEFAULT_PRESET_DAYS = 30;
   var LATE_LIMIT = 20;
   var SVG_NS = 'http://www.w3.org/2000/svg';
+  var THEME_KEY = 'ops-theme';
+  var THEMES = ['light', 'dark'];
 
   // ---------- API client ----------
 
@@ -102,6 +104,32 @@
     return Math.round((parseIso(iso) - parseIso(today)) / 86400000);
   }
 
+  /** The theme a click on the toggle switches to. */
+  function nextTheme(theme) {
+    return theme === 'dark' ? 'light' : 'dark';
+  }
+
+  // ---------- Theme ----------
+  // index.html sets data-theme in <head> before first paint; this code owns it from then on.
+
+  /** The theme the user picked earlier, or null. Storage can be blocked, so never throw. */
+  function readStoredTheme(win) {
+    try {
+      var value = win.localStorage.getItem(THEME_KEY);
+      return THEMES.indexOf(value) === -1 ? null : value;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function storeTheme(win, theme) {
+    try {
+      win.localStorage.setItem(THEME_KEY, theme);
+    } catch (e) {
+      // Not persisted; the toggle still works for this page view.
+    }
+  }
+
   // ---------- App ----------
 
   function initApp(document, fetchImpl) {
@@ -122,10 +150,13 @@
       chartOnTime: document.getElementById('chart-on-time'),
       chartTickets: document.getElementById('chart-tickets'),
       lateBody: document.getElementById('late-body'),
-      vendors: document.getElementById('vendors-list')
+      vendors: document.getElementById('vendors-list'),
+      themeToggle: document.getElementById('theme-toggle')
     };
+    var win = document.defaultView;
 
     var state = {
+      theme: null,
       today: null,
       from: null,
       to: null,
@@ -279,6 +310,16 @@
       });
     }
 
+    /** Colours live in style.css; the theme is only the data-theme attribute on <html>. */
+    function applyTheme(theme) {
+      state.theme = theme;
+      document.documentElement.setAttribute('data-theme', theme);
+      // The moon or sun icon is swapped by style.css; only the accessible name is set here.
+      var label = 'Switch to the ' + nextTheme(theme) + ' theme';
+      els.themeToggle.setAttribute('aria-label', label);
+      els.themeToggle.setAttribute('title', label);
+    }
+
     function renderRange() {
       els.from.value = state.from;
       els.to.value = state.to;
@@ -345,6 +386,36 @@
       });
     });
 
+    // The OS setting, when the browser can report it.
+    var systemDark = win && typeof win.matchMedia === 'function' ? win.matchMedia('(prefers-color-scheme: dark)') : null;
+
+    /** The user's stored choice, else the OS setting, else light. */
+    function preferredTheme() {
+      return readStoredTheme(win) || (systemDark && systemDark.matches ? 'dark' : 'light');
+    }
+
+    els.themeToggle.addEventListener('click', function () {
+      var theme = nextTheme(state.theme);
+      applyTheme(theme);
+      storeTheme(win, theme);
+    });
+
+    applyTheme(preferredTheme());
+
+    // Follow the OS setting while nothing is stored, and choices made in other open tabs.
+    if (systemDark && typeof systemDark.addEventListener === 'function') {
+      systemDark.addEventListener('change', function () {
+        applyTheme(preferredTheme());
+      });
+    }
+    if (win) {
+      win.addEventListener('storage', function (event) {
+        if (event.key === THEME_KEY || event.key === null) {
+          applyTheme(preferredTheme());
+        }
+      });
+    }
+
     var ready = api.health().then(function (health) {
       state.today = health.today;
       var range = applyPreset(DEFAULT_PRESET_DAYS, state.today);
@@ -372,7 +443,8 @@
     formatMoney: formatMoney,
     barWidths: barWidths,
     applyPreset: applyPreset,
-    daysUntil: daysUntil
+    daysUntil: daysUntil,
+    nextTheme: nextTheme
   };
 
   if (typeof module !== 'undefined') {

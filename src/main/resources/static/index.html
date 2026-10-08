@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Marlowe &amp; Finch Operations</title>
   <link rel="stylesheet" href="style.css">
+  <script>
+    // Set the theme before first paint so a stored choice never flashes. app.js owns it after load.
+    (function () {
+      var theme = null;
+      try { theme = localStorage.getItem('ops-theme'); } catch (e) {}
+      if (theme !== 'light' && theme !== 'dark') {
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 <body>
   <div class="app">
@@ -14,16 +25,27 @@
         <p id="app-subtitle" class="subtitle">Deliveries, tickets, revenue and renewals</p>
       </div>
 
-      <form id="range-form" class="range-form" autocomplete="off">
-        <label class="range-field">From <input id="range-from" type="date" required></label>
-        <label class="range-field">To <input id="range-to" type="date" required></label>
-        <button id="range-apply" type="submit">Apply</button>
-        <div class="presets" role="group" aria-label="Presets">
-          <button id="preset-7" class="preset" type="button">7 days</button>
-          <button id="preset-30" class="preset active" type="button">30 days</button>
-          <button id="preset-90" class="preset" type="button">90 days</button>
-        </div>
-      </form>
+      <div class="header-controls">
+        <form id="range-form" class="range-form" autocomplete="off">
+          <label class="range-field">From <input id="range-from" type="date" required></label>
+          <label class="range-field">To <input id="range-to" type="date" required></label>
+          <button id="range-apply" type="submit">Apply</button>
+          <div class="presets" role="group" aria-label="Presets">
+            <button id="preset-7" class="preset" type="button">7 days</button>
+            <button id="preset-30" class="preset active" type="button">30 days</button>
+            <button id="preset-90" class="preset" type="button">90 days</button>
+          </div>
+        </form>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to the dark theme" title="Switch to the dark theme">
+          <svg class="theme-icon icon-moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>
+          </svg>
+          <svg class="theme-icon icon-sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="4.5"/>
+            <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/>
+          </svg>
+        </button>
+      </div>
     </header>
 
     <main>
